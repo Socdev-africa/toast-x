@@ -1,97 +1,190 @@
-import { Variants } from 'framer-motion';
+// src/utils/animations.ts
 import { ToastAnimationType, ToastPosition } from '../types';
 
-export const getAnimationVariants = (animation: ToastAnimationType): Variants => {
+type VariantsType = {
+  initial: any;
+  animate: any;
+  exit: any;
+};
+
+export const getAnimationVariants = (
+  animation: ToastAnimationType,
+  position?: ToastPosition
+): VariantsType => {
+  const isBottom = position?.includes('bottom');
+  
   switch (animation) {
-    case 'fade':
-      return {
-        initial: { opacity: 0 },
-        animate: { opacity: 1 },
-        exit: { opacity: 0 }
-      };
-    case 'scale':
-      return {
-        initial: { opacity: 0, scale: 0.9 },
-        animate: { opacity: 1, scale: 1 },
-        exit: { opacity: 0, scale: 0.9 }
-      };
     case 'slide':
       return {
-        initial: { opacity: 0, x: 50 },
-        animate: { opacity: 1, x: 0 },
-        exit: { opacity: 0, x: 100 }
-      };
-    case 'bounce':
-      return {
-        initial: { opacity: 0, y: -20 },
+        initial: { 
+          x: position?.includes('left') ? -100 : position?.includes('right') ? 100 : 0,
+          y: position?.includes('top') ? -100 : position?.includes('bottom') ? 100 : 0,
+          opacity: 0 
+        },
         animate: { 
-          opacity: 1, 
+          x: 0,
           y: 0,
+          opacity: 1,
           transition: {
-            type: 'spring',
-            stiffness: 400,
-            damping: 10
+            x: { type: 'spring', stiffness: 300, damping: 30 },
+            y: { type: 'spring', stiffness: 300, damping: 30 },
+            opacity: { duration: 0.2 }
           }
         },
         exit: { 
-          opacity: 0, 
-          y: -20,
+          x: position?.includes('left') ? -100 : position?.includes('right') ? 100 : 0,
+          y: position?.includes('top') ? -100 : position?.includes('bottom') ? 100 : 0,
+          opacity: 0,
+          transition: { duration: 0.2 }
+        }
+      };
+    case 'fade':
+      return {
+        initial: { opacity: 0 },
+        animate: { 
+          opacity: 1,
+          transition: { duration: 0.2 }
+        },
+        exit: { 
+          opacity: 0,
+          transition: { duration: 0.15 }
+        }
+      };
+    case 'scale':
+      return {
+        initial: { scale: 0.85, opacity: 0 },
+        animate: { 
+          scale: 1,
+          opacity: 1,
           transition: {
-            type: 'spring',
-            stiffness: 400,
-            damping: 10
+            scale: { type: 'spring', stiffness: 400, damping: 20 },
+            opacity: { duration: 0.2 }
           }
+        },
+        exit: { 
+          scale: 0.85,
+          opacity: 0,
+          transition: { duration: 0.2 }
+        }
+      };
+    case 'bounce':
+      return {
+        initial: { 
+          y: isBottom ? 20 : -20, 
+          opacity: 0,
+          scale: 0.9
+        },
+        animate: { 
+          y: 0,
+          opacity: 1,
+          scale: 1,
+          transition: {
+            y: { type: 'spring', stiffness: 400, damping: 15 },
+            opacity: { duration: 0.2 },
+            scale: { type: 'spring', stiffness: 400, damping: 10 }
+          }
+        },
+        exit: { 
+          y: isBottom ? 20 : -20,
+          opacity: 0,
+          scale: 0.9,
+          transition: { duration: 0.2 }
         }
       };
     case 'flip':
       return {
-        initial: { opacity: 0, rotateX: 90 },
+        initial: { 
+          rotateX: isBottom ? 45 : -45, 
+          opacity: 0,
+          y: isBottom ? 20 : -20
+        },
         animate: { 
-          opacity: 1, 
           rotateX: 0,
+          opacity: 1,
+          y: 0,
           transition: {
-            type: 'spring',
-            stiffness: 300,
-            damping: 15
+            rotateX: { type: 'spring', stiffness: 400, damping: 20 },
+            opacity: { duration: 0.3 },
+            y: { type: 'spring', stiffness: 400, damping: 20 }
           }
         },
         exit: { 
-          opacity: 0, 
-          rotateX: -90,
-          transition: {
-            type: 'spring',
-            stiffness: 300,
-            damping: 15
-          }
+          rotateX: isBottom ? 45 : -45,
+          opacity: 0,
+          y: isBottom ? 20 : -20,
+          transition: { duration: 0.3 }
         }
       };
     default:
       return {
-        initial: { opacity: 0 },
-        animate: { opacity: 1 },
-        exit: { opacity: 0 }
+        initial: { opacity: 0, y: -10 },
+        animate: { 
+          opacity: 1, 
+          y: 0,
+          transition: { duration: 0.2 }
+        },
+        exit: { 
+          opacity: 0, 
+          y: -10,
+          transition: { duration: 0.2 }
+        }
       };
   }
 };
 
-export const getPositionTransition = (position: ToastPosition) => {
-  // Determine animation direction based on position
-  const isTop = position.startsWith('top');
-  const isCenter = position.includes('center');
-  
-  if (isCenter) {
-    return {
-      initial: { opacity: 0, y: isTop ? -20 : 20 },
-      animate: { opacity: 1, y: 0 },
-      exit: { opacity: 0, y: isTop ? -20 : 20 }
-    };
-  }
-  
-  const isRight = position.includes('right');
-  
+// Custom spring transitions for smoother animations
+export const springTransition = {
+  type: 'spring',
+  stiffness: 350,
+  damping: 25
+};
+
+export const fastSpringTransition = {
+  type: 'spring',
+  stiffness: 500,
+  damping: 30
+};
+
+export const gentleSpringTransition = {
+  type: 'spring',
+  stiffness: 250,
+  damping: 20
+};
+
+// Handling animations based on toast position
+export const getPositionAnimationProps = (position: ToastPosition) => {
+  // Base positioning
+  const positionStyles: Record<ToastPosition, any> = {
+    'top-left': { top: 0, left: 0 },
+    'top-center': { top: 0, left: '50%', transform: 'translateX(-50%)' },
+    'top-right': { top: 0, right: 0 },
+    'bottom-left': { bottom: 0, left: 0 },
+    'bottom-center': { bottom: 0, left: '50%', transform: 'translateX(-50%)' },
+    'bottom-right': { bottom: 0, right: 0 }
+  };
+
+  // Entry direction based on position
+  const entryDirections: Record<ToastPosition, any> = {
+    'top-left': { x: -100, y: 0 },
+    'top-center': { y: -100, x: 0 },
+    'top-right': { x: 100, y: 0 },
+    'bottom-left': { x: -100, y: 0 },
+    'bottom-center': { y: 100, x: 0 },
+    'bottom-right': { x: 100, y: 0 }
+  };
+
   return {
-    initial: { opacity: 0, x: isRight ? 100 : -100 },
-    animate: { opacity: 1, x: 0 },
-    exit: { opacity: 0, x: isRight ? 100 : -100 }
+    positionStyles: positionStyles[position],
+    entryDirection: entryDirections[position]
+  };
+};
+
+// Helper to generate staggered animations for multiple toasts
+export const getStaggeredAnimation = (index: number, count: number) => {
+  return {
+    transition: {
+      ...springTransition,
+      delay: Math.min(index * 0.05, 0.3) // Cap max delay at 300ms
+    }
   };
 };

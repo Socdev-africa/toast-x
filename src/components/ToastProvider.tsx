@@ -7,8 +7,9 @@ type ToastAction =
     | { type: 'ADD_TOAST'; toast: Toast }
     | { type: 'UPDATE_TOAST'; id: string; options: Partial<Toast> }
     | { type: 'DISMISS_TOAST'; id: string }
+    | { type: 'REMOVE_TOAST'; id: string }
     | { type: 'DISMISS_ALL' }
-    | { type: 'SET_VISIBLE'; id: string; visible: boolean }
+    | { type: 'REMOVE_ALL' }
     | { type: 'PAUSE_TOAST'; id: string }
     | { type: 'RESUME_TOAST'; id: string }
     | { type: 'PAUSE_ALL' }
@@ -25,7 +26,7 @@ const defaultOptions: Required<Omit<ToastOptions, 'id' | 'action' | 'onClose' | 
     position: 'top-right',
     animation: 'slide',
     dismissible: true,
-    progressBar: false,
+    progressBar: true,
     pauseOnHover: true,
     sound: false,
     richContent: false,
@@ -56,17 +57,24 @@ const toastReducer = (state: ToastState, action: ToastAction): ToastState => {
                     toast.id === action.id ? { ...toast, visible: false } : toast
                 ),
             };
+        case 'REMOVE_TOAST':
+            return {
+                ...state,
+                toasts: state.toasts.filter((toast) => toast.id !== action.id),
+                paused: Object.fromEntries(
+                    Object.entries(state.paused).filter(([id]) => id !== action.id)
+                ),
+            };
         case 'DISMISS_ALL':
             return {
                 ...state,
                 toasts: state.toasts.map((toast) => ({ ...toast, visible: false })),
             };
-        case 'SET_VISIBLE':
+        case 'REMOVE_ALL':
             return {
                 ...state,
-                toasts: state.toasts.map((toast) =>
-                    toast.id === action.id ? { ...toast, visible: action.visible } : toast
-                ),
+                toasts: [],
+                paused: {},
             };
         case 'PAUSE_TOAST':
             return {
@@ -106,8 +114,20 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({
     newestOnTop = true,
 }) => {
     const [state, dispatch] = useReducer(toastReducer, { toasts: [], paused: {} });
-    const mergedDefaultOptions = { ...defaultOptions, ...userDefaultOptions };
+    const mergedDefaultOptions = useMemo(
+        () => ({ ...defaultOptions, ...userDefaultOptions }),
+        [userDefaultOptions]
+    );
+
     const toastTimers = useRef<Record<string, NodeJS.Timeout>>({});
+    const removeTimers = useRef<Record<string, NodeJS.Timeout>>({});
+
+    useEffect(() => {
+        return () => {
+            Object.values(toastTimers.current).forEach(clearTimeout);
+            Object.values(removeTimers.current).forEach(clearTimeout);
+        };
+    }, []);
 
     useEffect(() => {
         const visibleToasts = state.toasts.filter((toast) => toast.visible);
@@ -130,10 +150,14 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({
     useEffect(() => {
         state.toasts.forEach((toast) => {
             if (toast.visible && toast.sound) {
-                const audio = new Audio(typeof toast.sound === 'string' ? toast.sound : '/toast-notification.mp3');
-                audio.volume = 0.5;
-                audio.play().catch(() => {
-                });
+                try {
+                    const audio = new Audio(typeof toast.sound === 'string' ? toast.sound : '/toast-notification.mp3');
+                    audio.volume = 0.5;
+                    audio.play().catch(() => {
+                    });
+                } catch (error) {
+                    console.error('Failed to play toast sound:', error);
+                }
             }
         });
     }, [state.toasts]);
@@ -142,13 +166,25 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({
         if (toast.duration !== false && !state.paused[toast.id]) {
             if (toastTimers.current[toast.id]) {
                 clearTimeout(toastTimers.current[toast.id]);
+                delete toastTimers.current[toast.id];
             }
 
-            toastTimers.current[toast.id] = setTimeout(() => {
-                dispatch({ type: 'DISMISS_TOAST', id: toast.id });
+            const toastId = toast.id;
+
+            toastTimers.current[toastId] = setTimeout(() => {
+                dispatch({ type: 'DISMISS_TOAST', id: toastId });
+
+                removeTimers.current[toastId] = setTimeout(() => {
+                    dispatch({ type: 'REMOVE_TOAST', id: toastId });
+
+                    const foundToast = state.toasts.find((t) => t.id === toastId);
+                    if (foundToast?.onClose) {
+                        foundToast.onClose();
+                    }
+                }, 300);
             }, toast.duration);
         }
-    }, [state.paused]);
+    }, [state.paused, state.toasts]);
 
     useEffect(() => {
         state.toasts.forEach((toast) => {
@@ -156,12 +192,9 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({
                 setupAutoClose(toast);
             }
         });
-
-        return () => {
-            Object.values(toastTimers.current).forEach(clearTimeout);
-        };
     }, [state.toasts, state.paused, setupAutoClose]);
 
+    // Create a new toast
     const createToast = useCallback(
         (content: React.ReactNode, options?: ToastOptions): string => {
             const id = options?.id || uuidv4();
@@ -202,6 +235,10 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({
     const update = useCallback(
         (id: string, options: Partial<ToastOptions> & { content?: React.ReactNode }): void => {
             const { content, ...rest } = options;
+
+            const toastExists = state.toasts.some(toast => toast.id === id);
+            if (!toastExists) return;
+
             dispatch({
                 type: 'UPDATE_TOAST',
                 id,
@@ -209,9 +246,9 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({
             });
 
             if (options.duration !== undefined) {
-                const toast = state.toasts.find((t) => t.id === id);
-                if (toast) {
-                    setupAutoClose({ ...toast, ...(options as Partial<Toast>) } as Toast);
+                const currentToast = state.toasts.find((t) => t.id === id);
+                if (currentToast) {
+                    setupAutoClose({ ...currentToast, ...(options as Partial<Toast>) } as Toast);
                 }
             }
         },
@@ -219,6 +256,9 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({
     );
 
     const dismiss = useCallback((id: string): void => {
+        const toastExists = state.toasts.some(toast => toast.id === id);
+        if (!toastExists) return;
+
         dispatch({ type: 'DISMISS_TOAST', id });
 
         if (toastTimers.current[id]) {
@@ -226,10 +266,14 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({
             delete toastTimers.current[id];
         }
 
-        const toast = state.toasts.find((t) => t.id === id);
-        if (toast?.onClose) {
-            toast.onClose();
-        }
+        removeTimers.current[id] = setTimeout(() => {
+            dispatch({ type: 'REMOVE_TOAST', id });
+
+            const foundToast = state.toasts.find((t) => t.id === id);
+            if (foundToast?.onClose) {
+                foundToast.onClose();
+            }
+        }, 300);
     }, [state.toasts]);
 
     const dismissAll = useCallback((): void => {
@@ -238,8 +282,18 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({
         Object.keys(toastTimers.current).forEach((id) => {
             clearTimeout(toastTimers.current[id]);
             delete toastTimers.current[id];
+
+            removeTimers.current[id] = setTimeout(() => {
+                dispatch({ type: 'REMOVE_ALL' });
+
+                state.toasts.forEach(currentToast => {
+                    if (currentToast.onClose) {
+                        currentToast.onClose();
+                    }
+                });
+            }, 300);
         });
-    }, []);
+    }, [state.toasts]);
 
     const isActive = useCallback(
         (id: string): boolean => {
@@ -260,9 +314,9 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({
     const resume = useCallback((id: string): void => {
         dispatch({ type: 'RESUME_TOAST', id });
 
-        const toast = state.toasts.find((t) => t.id === id);
-        if (toast && toast.visible && toast.duration !== false) {
-            setupAutoClose(toast);
+        const currentToast = state.toasts.find((t) => t.id === id);
+        if (currentToast && currentToast.visible && currentToast.duration !== false) {
+            setupAutoClose(currentToast);
         }
     }, [state.toasts, setupAutoClose]);
 
