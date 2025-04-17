@@ -1,3 +1,4 @@
+// src/components/Toast.tsx
 import React, { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ToastComponentProps, ToastType } from '../types';
@@ -109,7 +110,7 @@ const Toast: React.FC<ToastComponentProps> = ({
                     dragConstraints={{ left: 0, right: 100 }}
                     dragElastic={0.9}
                     whileDrag={{ scale: 0.98 }}
-                    onDragEnd={(e, info) => {
+                    onDragEnd={(_, info) => {
                         if (info.offset.x > 100 && dismissible) {
                             onDismiss();
                         }
