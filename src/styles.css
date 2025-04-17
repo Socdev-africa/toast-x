@@ -1,0 +1,137 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.toast-x-enter {
+    transform: translateX(100%);
+    opacity: 0;
+}
+
+.toast-x-enter-active {
+    transform: translateX(0);
+    opacity: 1;
+    transition: all 300ms ease-out;
+}
+
+.toast-x-exit {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.toast-x-exit-active {
+    transform: translateX(100%);
+    opacity: 0;
+    transition: all 300ms ease-in;
+}
+
+.toast-x-slide-top-enter {
+    transform: translateY(-100%);
+    opacity: 0;
+}
+
+.toast-x-slide-top-enter-active {
+    transform: translateY(0);
+    opacity: 1;
+    transition: all 300ms ease-out;
+}
+
+.toast-x-slide-top-exit {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.toast-x-slide-top-exit-active {
+    transform: translateY(-100%);
+    opacity: 0;
+    transition: all 300ms ease-in;
+}
+
+.toast-x-slide-bottom-enter {
+    transform: translateY(100%);
+    opacity: 0;
+}
+
+.toast-x-slide-bottom-enter-active {
+    transform: translateY(0);
+    opacity: 1;
+    transition: all 300ms ease-out;
+}
+
+.toast-x-slide-bottom-exit {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.toast-x-slide-bottom-exit-active {
+    transform: translateY(100%);
+    opacity: 0;
+    transition: all 300ms ease-in;
+}
+
+/* Toast container positions */
+.toast-x-container {
+    position: fixed;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    pointer-events: none;
+}
+
+.toast-x-container>* {
+    pointer-events: auto;
+}
+
+.toast-x-container.top-left {
+    top: 1rem;
+    left: 1rem;
+}
+
+.toast-x-container.top-center {
+    top: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.toast-x-container.top-right {
+    top: 1rem;
+    right: 1rem;
+}
+
+.toast-x-container.bottom-left {
+    bottom: 1rem;
+    left: 1rem;
+}
+
+.toast-x-container.bottom-center {
+    bottom: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.toast-x-container.bottom-right {
+    bottom: 1rem;
+    right: 1rem;
+}
+
+/* Progress bar animation */
+@keyframes toast-progress {
+    from {
+        width: 100%;
+    }
+
+    to {
+        width: 0%;
+    }
+}
+
+.toast-x-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 4px;
+    background: currentColor;
+    opacity: 0.2;
+    animation-name: toast-progress;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
+}

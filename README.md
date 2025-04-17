@@ -1,54 +1,120 @@
-# React + TypeScript + Vite
+# Toast-X
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A lightweight, customizable toast notification library for React applications with TypeScript support.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- 🚀 **Lightweight**: Small footprint with minimal dependencies
+- 💅 **Customizable**: Easily customize appearance, positions, animations, and more
+- ⚡ **Performant**: Built with Framer Motion for smooth animations
+- 🌗 **Dark Mode**: Automatically adapts to light/dark themes
+- 🎨 **Tailwind Integration**: Pre-styled with Tailwind CSS
+- 📱 **Responsive**: Works on all device sizes
+- ♿ **Accessible**: Focus management and screen reader support
+- 🔥 **Premium Features**: Action buttons, rich content, progress bars, and more
 
-## Expanding the ESLint configuration
+## Installation
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+```bash
+npm install toast-x
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Usage
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+```jsx
+import { ToastProvider, useToast } from 'toast-x';
+import 'toast-x/styles.css';
 
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
+// Wrap your app with the ToastProvider
+function App() {
+  return (
+    <ToastProvider>
+      <YourComponent />
+    </ToastProvider>
+  );
+}
+
+// Use the toast hook in any component
+function YourComponent() {
+  const { toast, success, error, info, warning } = useToast();
+  
+  return (
+    <div>
+      <button onClick={() => toast('Hello World!')}>
+        Show Toast
+      </button>
+      <button onClick={() => success('Operation successful!')}>
+        Show Success
+      </button>
+    </div>
+  );
+}
 ```
+
+## API Reference
+
+### ToastProvider Props
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `defaultOptions` | `ToastOptions` | See below | Default options for all toasts |
+| `maxToasts` | `number` | `10` | Maximum number of toasts to show at once |
+| `newestOnTop` | `boolean` | `true` | Whether to show newest toasts on top |
+
+### Toast Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `type` | `'success' \| 'error' \| 'info' \| 'warning' \| 'loading' \| 'custom'` | `'info'` | Type of toast |
+| `duration` | `number \| false` | `5000` | Duration in ms, `false` to disable auto-closing |
+| `position` | `'top-left' \| 'top-center' \| 'top-right' \| 'bottom-left' \| 'bottom-center' \| 'bottom-right'` | `'top-right'` | Position on screen |
+| `animation` | `'slide' \| 'fade' \| 'scale' \| 'bounce' \| 'flip'` | `'slide'` | Animation type |
+| `dismissible` | `boolean` | `true` | Whether toast can be dismissed by clicking |
+| `progressBar` | `boolean` | `false` | Show progress bar for remaining time |
+| `pauseOnHover` | `boolean` | `true` | Pause timer when hovering |
+| `className` | `string` | `''` | Additional CSS classes |
+| `sound` | `boolean \| string` | `false` | Play sound when toast appears |
+| `richContent` | `boolean` | `false` | Enable markdown rendering |
+| `action` | `{ label: string, onClick: () => void, theme?: 'primary' \| 'secondary' \| 'danger' }` | `undefined` | Add action button |
+| `priority` | `number` | `0` | Priority level (higher shows first) |
+| `group` | `string` | `undefined` | Group identifier |
+| `zIndex` | `number` | `undefined` | Custom z-index |
+| `onClose` | `() => void` | `undefined` | Callback when toast closes |
+
+### Toast API
+
+| Method | Description |
+|--------|-------------|
+| `toast(content, options?)` | Show a basic toast |
+| `success(content, options?)` | Show a success toast |
+| `error(content, options?)` | Show an error toast |
+| `info(content, options?)` | Show an info toast |
+| `warning(content, options?)` | Show a warning toast |
+| `loading(content, options?)` | Show a loading toast |
+| `custom(content, options?)` | Show a custom toast |
+| `update(id, options)` | Update an existing toast |
+| `dismiss(id)` | Dismiss a specific toast |
+| `dismissAll()` | Dismiss all toasts |
+| `isActive(id)` | Check if a toast is active |
+| `pause(id)` | Pause a toast's timer |
+| `resume(id)` | Resume a toast's timer |
+| `pauseAll()` | Pause all toast timers |
+| `resumeAll()` | Resume all toast timers |
+
+## Premium Features
+
+Toast-X comes with several premium features that set it apart:
+
+- **Interactive Toasts**: Add action buttons to your toasts
+- **Rich Content**: Support for markdown and formatting
+- **Progress Bars**: Visual indicator of remaining time
+- **Sound Notifications**: Play sounds when toasts appear
+- **Pause on Hover**: Pause timers when users hover
+- **Draggable Toasts**: Swipe to dismiss on all devices
+- **Priority System**: Control which toasts appear first
+- **Toast Groups**: Categorize related notifications
+- **Queue Management**: Control how multiple toasts appear
+
+## License
+
+MIT
